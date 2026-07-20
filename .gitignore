@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# the clone's data dir never belongs in git
+LarkClone/
