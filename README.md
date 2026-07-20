@@ -25,9 +25,24 @@ open -n "/Applications/Feishu 测试.app"
 
 ## 环境要求
 
-- macOS（Apple Silicon 已验证；Intel 理论可用但未实测）。
+- **仅支持 macOS**（Apple Silicon 已验证；Intel 理论可用但未实测）。Windows / Linux 不适用——脚本全程依赖 macOS 系统工具（`codesign`、`iconutil`、`PlistBuddy`、`lsregister`、`chflags`），飞书 Windows/Linux 版本的单实例机制也不一定是 Chromium ProcessSingleton。
 - 已装飞书或 Lark，位于 `/Applications/Lark.app`、`/Applications/飞书.app` 或 `~/Applications/` 下任一变体。**自动探测**，无需告诉脚本是哪个；如探测失败用 `SRC=/path/to/App.app` 覆盖。
 - 可选：Xcode Command Line Tools 用于图标调色（`xcode-select --install`）。没装的话图标保持原样——纯装饰，不影响功能。
+
+## 0 侵入性保证
+
+脚本对系统的侵入性为 **0 环**（零侵入），具体边界：
+
+| 不动什么 | 说明 |
+|---|---|
+| 原版飞书 App | **完全不动**。只读取 `/Applications/Lark.app`（或 `飞书.app`）作为源，从不写回。 |
+| 系统目录 | 不装任何东西到 `/usr/local`、`/System`、`/Library`，不需要 `sudo`、不需要关 SIP。 |
+| 飞书服务端 | 不破登录、不绕付费、不抓取或篡改服务端数据。脚本只在你本机的副本上做字节补丁。 |
+| 飞书升级器 | 主飞书自身的自动升级**完全不受影响**——脚本只阉割**克隆体**内部的 `darwin_updater`，不碰原版。 |
+| 你的登录态 | 克隆体的 `~/Library/Application Support/LarkClone/` 是全新独立的数据树，不读不写主飞书的 `LarkShell/`。 |
+| 其他系统进程 | 无常驻进程、无 LaunchAgent、无后台服务。跑完即退。 |
+
+唯一持久产物是 `/Applications/Feishu 测试.app`（约 1.5 GB，可随时拖到废纸篓删除）和一个 `~/Library/Application Support/LarkClone/` 数据目录。两个都是用户级文件，删干净不残留。
 
 ## 参数 / 环境变量（全可选）
 
@@ -39,6 +54,15 @@ open -n "/Applications/Feishu 测试.app"
 | — | `SRC` | 自动探测 | 源 `.app` 路径（探测失败时覆盖） |
 | — | `OLDDIR` | `LarkShell` | 源数据目录名（9 字节） |
 | — | `NEWDIR` | `LarkClone` | 克隆数据目录名（**必须和 `OLDDIR` 等长**） |
+
+## 平台兼容
+
+| 平台 | 状态 |
+|---|---|
+| macOS (Apple Silicon) | ✅ 已验证 |
+| macOS (Intel) | ⚠️ 理论可用，未实测 |
+| Windows | ❌ 不支持 |
+| Linux | ❌ 不支持 |
 
 ## 作为 agent skill 使用
 
