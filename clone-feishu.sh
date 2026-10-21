@@ -116,9 +116,14 @@ done
 for fw in "$DST"/Contents/Frameworks/*.framework; do
   [ -d "$fw" ] && codesign --force --sign - "$fw" >/dev/null 2>&1
 done
-# 5) the main app LAST (no --deep; inner code already sealed)
+# 5) XPC services (Lark 147+ ships AgentInfraService.xpc, which carries LarkShell and gets patched)
+for x in "$DST"/Contents/XPCServices/*.xpc; do
+  [ -d "$x" ] && codesign --force --sign - "$x" >/dev/null 2>&1
+done
+# 6) the main app LAST (no --deep; inner code already sealed)
 codesign --force --sign - "$DST"
-codesign --verify --strict --deep "$DST" && echo "    signature valid (strict)"
+codesign --verify --strict --deep "$DST" || { echo "FATAL: signature invalid — some nested code was not re-signed"; exit 1; }
+echo "    signature valid (strict)"
 
 echo ">>> [7/7] register with LaunchServices"
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$DST"
