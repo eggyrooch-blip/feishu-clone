@@ -109,6 +109,7 @@ git clone https://github.com/eggyrooch-blip/feishu-clone.git ~/.grok/skills/feis
 - **坑 1**：`codesign --deep` 不会重新封内层 helper，必须自底向上逐层签，否则克隆启动即崩。
 - **坑 2**：`grep` 处理几百 MB 的 Mach-O 会卡死（巨型行 + NUL 字节）。脚本用 `strings` 检测、`perl -0777` 打补丁绕开。
 - **坑 3**（致命，2026-07-20 发现）：飞书克隆体自带完整升级器，会在后台下载官方更新包替换掉克隆体——替换后的官方二进制锁目录名变回 `LarkShell`，字节补丁被覆盖，克隆体回头跟主飞书抢同一把锁，双开静默失效。脚本第五步双层封堵（替换更新器为空脚本 + `chflags uchg` 锁下载目录）。
+- **坑 4**（2026-10-21 发现，Lark 147.0.7727.149）：新版在 `Contents/XPCServices/` 下多了 `AgentInfraService.xpc`，它也含 `LarkShell` 会被补丁。旧脚本不重签 XPC，外层签名校验失败却仍打印 `DONE.`。现在先签 XPC 再签外层，且校验失败直接 `FATAL` 退出。
 
 ## repo 文件
 
